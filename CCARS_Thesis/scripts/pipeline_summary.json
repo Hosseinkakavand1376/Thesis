@@ -1,0 +1,22 @@
+{
+  "salinas": {
+    "ccars": {
+      "success": false,
+      "time": 0.3573789596557617
+    },
+    "other_methods": {
+      "success": false,
+      "time": 0.35941243171691895
+    }
+  },
+  "indian_pines": {
+    "ccars": {
+      "success": false,
+      "time": 0.357696533203125
+    },
+    "other_methods": {
+      "success": false,
+      "time": 0.3601531982421875
+    }
+  }
+}
