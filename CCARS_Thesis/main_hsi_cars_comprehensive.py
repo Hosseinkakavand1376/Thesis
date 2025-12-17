@@ -210,7 +210,8 @@ def run_comprehensive_evaluation(
     compute_learning_curves=False,
     lc_train_sizes=None,
     preprocessing_method='snv_only',
-    optimize_roc=False
+    optimize_roc=False,
+    adaptive_permutations=False
 ):
     """
     Comprehensive CCARS evaluation with multiple configurations
@@ -733,8 +734,27 @@ def run_comprehensive_evaluation(
                 # Get trained model
                 model = clf_result['model']
                 
-                # Run permutation test
-                perm_test = PermutationTest(n_permutations=n_permutations, random_state=random_state)
+                # Determine number of permutations (adaptive for slow classifiers)
+                if adaptive_permutations:
+                    # Adaptive permutation counts based on classifier speed
+                    if clf_name == 'PLS-DA':
+                        n_perms = n_permutations  # Fast classifier, keep full (e.g., 1000)
+                    elif 'SVM' in clf_name:
+                        n_perms = min(100, n_permutations)  # Slow classifier, reduce to 100
+                    elif 'Random Forest' in clf_name or 'RF' in clf_name:
+                        n_perms = min(200, n_permutations)  # Medium speed, reduce to 200
+                    elif 'k-NN' in clf_name or 'kNN' in clf_name:
+                        n_perms = min(200, n_permutations)  # Medium speed, reduce to 200
+                    else:
+                        n_perms = n_permutations  # Unknown classifier, use full
+                    
+                    if n_perms != n_permutations:
+                        print(f"  ⚡ Adaptive permutations: Using {n_perms} permutations for {clf_name} (vs {n_permutations} default)")
+                else:
+                    n_perms = n_permutations  # Use default without adaptation
+                
+                # Run permutation test with adaptive count
+                perm_test = PermutationTest(n_permutations=n_perms, random_state=random_state)
                 p_values = perm_test.run_test(
                     model, X_train_sel, y_train, X_test_sel, y_test,
                     metrics=['accuracy', 'precision', 'recall', 'f1']
@@ -1173,6 +1193,8 @@ def main():
                        help="Preprocessing method: 'snv_only' (Nicola's exact, default), 'log10_snv' (HSI-adapted), 'none'")
     parser.add_argument('--optimize_roc', action='store_true',
                        help='Enable ROC threshold optimization for improved classification')
+    parser.add_argument('--adaptive_permutations', action='store_true',
+                       help='Use adaptive permutation counts (faster for Kaggle: PLS-DA=1000, SVM=100, RF=200)')
     parser.add_argument('--output', type=str, default=None,
                        help='Output directory')
     parser.add_argument('--random_state', type=int, default=42,
@@ -1209,7 +1231,8 @@ def main():
         compute_learning_curves=args.compute_learning_curves,
         lc_train_sizes=args.lc_train_sizes,
         preprocessing_method=args.preprocessing,
-        optimize_roc=args.optimize_roc
+        optimize_roc=args.optimize_roc,
+        adaptive_permutations=args.adaptive_permutations
     )
     
     return results
