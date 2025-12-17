@@ -1170,8 +1170,8 @@ def main():
                        help='CCARS Monte Carlo runs')
     parser.add_argument('--cars_iterations', type=int, default=10,
                        help='CCARS iterations per run')
-    parser.add_argument('--components', type=int, default=3,
-                       help='PLS components')
+    parser.add_argument('--components', type=int, nargs='+', default=[2, 3, 4],
+                       help='PLS components to test (can specify multiple, e.g., --components 2 3 4)')
     parser.add_argument('--validation', action='store_true',
                        help='Enable hold-out validation (final independent evaluation)')
     parser.add_argument('--use_calibration', action='store_true', default=True,
@@ -1213,29 +1213,43 @@ def main():
         # Nicola's mode: default fixed counts
         wavelength_counts = [10, 20, 30, 50]
     
-    results = run_comprehensive_evaluation(
-        dataset_name=args.dataset,
-       wavelength_counts=wavelength_counts,
-        classifiers=args.classifiers,
-        cars_runs=args.cars_runs,
-        cars_iterations=args.cars_iterations,
-        pls_components=args.components,
-        output_dir=args.output,
-        random_state=args.random_state,
-        optimize_wavelengths=args.optimize_wavelengths,
-        use_holdout_validation=args.validation,
-        use_calibration=args.use_calibration,
-        calibration_fraction=args.calibration_fraction,
-        n_permutations=args.n_permutations,
-        skip_permutation=args.skip_permutation,
-        compute_learning_curves=args.compute_learning_curves,
-        lc_train_sizes=args.lc_train_sizes,
-        preprocessing_method=args.preprocessing,
-        optimize_roc=args.optimize_roc,
-        adaptive_permutations=args.adaptive_permutations
-    )
     
-    return results
+    # Normalize components to always be a list
+    components_list = args.components if isinstance(args.components, list) else [args.components]
+    
+    all_results = {}
+    
+    # Loop through each PLS component value
+    for pls_comp in components_list:
+        print(f"\n{'='*80}")
+        print(f"Testing with PLS Components: {pls_comp}")
+        print(f"{'='*80}\n")
+        
+        results = run_comprehensive_evaluation(
+            dataset_name=args.dataset,
+           wavelength_counts=wavelength_counts,
+            classifiers=args.classifiers,
+            cars_runs=args.cars_runs,
+            cars_iterations=args.cars_iterations,
+            pls_components=pls_comp,  # Pass single component value
+            output_dir=args.output,
+            random_state=args.random_state,
+            optimize_wavelengths=args.optimize_wavelengths,
+            use_holdout_validation=args.validation,
+            use_calibration=args.use_calibration,
+            calibration_fraction=args.calibration_fraction,
+            n_permutations=args.n_permutations,
+            skip_permutation=args.skip_permutation,
+            compute_learning_curves=args.compute_learning_curves,
+            lc_train_sizes=args.lc_train_sizes,
+            preprocessing_method=args.preprocessing,
+            optimize_roc=args.optimize_roc,
+            adaptive_permutations=args.adaptive_permutations
+        )
+        
+        all_results[f'components_{pls_comp}'] = results
+    
+    return all_results
 
 
 if __name__ == '__main__':
