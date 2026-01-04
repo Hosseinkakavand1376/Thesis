@@ -1225,6 +1225,12 @@ def main():
         print(f"Testing with PLS Components: {pls_comp}")
         print(f"{'='*80}\n")
         
+        # Create component-specific output directory
+        if args.output:
+            component_output_dir = str(Path(args.output) / f"component_{pls_comp}")
+        else:
+            component_output_dir = f"{args.dataset}_results/component_{pls_comp}"
+        
         results = run_comprehensive_evaluation(
             dataset_name=args.dataset,
            wavelength_counts=wavelength_counts,
@@ -1232,7 +1238,7 @@ def main():
             cars_runs=args.cars_runs,
             cars_iterations=args.cars_iterations,
             pls_components=pls_comp,  # Pass single component value
-            output_dir=args.output,
+            output_dir=component_output_dir,
             random_state=args.random_state,
             optimize_wavelengths=args.optimize_wavelengths,
             use_holdout_validation=args.validation,
